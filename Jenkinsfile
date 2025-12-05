@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         DOCKERHUB_CREDENTIALS = credentials('docker_hub_cr')
-        IMAGE_NAME = "bharathiraja3234/new_app"
-        CONTAINER_NAME = "new_app"
+        IMAGE_NAME = "bharathiraja3234/my_app"
+        CONTAINER_NAME = "mp_app"
     }
 
     stages {
