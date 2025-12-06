@@ -1,45 +1,39 @@
 pipeline {
     agent any
-
-    environment {
-        DOCKERHUB_CREDENTIALS = credentials('docker_hub_cr')
-        IMAGE_NAME = "bharathiraja3234/my_app"
-        CONTAINER_NAME = "mp_app"
-    }
-
     stages {
-
-        stage('Build docker image') {
+        stage('Clone') {
             steps {
-                sh 'sudo docker build -t $IMAGE_NAME:$BUILD_NUMBER .'
+                git branch: 'main', url: 'https://github.com/bharathiraja-15/docker-nginx-app'
             }
         }
-
-        stage('Login to Docker Hub') {
+        stage('Build Image') {
+            steps {
+                sh 'docker build -t bharathiraja3234/my_app:latest .'
+            }
+        }
+        stage('Docker Login') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker_hub_cr',
+                    usernameVariable: 'USER',
+                    passwordVariable: 'PASS'
+                )]) {
+                    sh 'echo "$PASS" | docker login -u "$USER" --password-stdin'
+                }
+            }
+        }
+        stage('Push Image') {
+            steps {
+                sh 'docker push bharathiraja3234/my_app:latest'
+            }
+        }
+        stage('Run Container') {
             steps {
                 sh '''
-                echo $DOCKERHUB_CREDENTIALS_PSW | \
-                sudo docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
-                '''
-            }
-        }
-
-        stage('Push image') {
-            steps {
-                sh 'sudo docker push $IMAGE_NAME:$BUILD_NUMBER'
-            }
-        }
-
-        stage('Run container') {
-            steps {
-                sh '''
-                sudo docker stop $CONTAINER_NAME || true
-                sudo docker rm $CONTAINER_NAME || true
-
-                sudo docker run -d \
-                    --name $CONTAINER_NAME \
-                    -p 80:80 \
-                    $IMAGE_NAME:$BUILD_NUMBER
+                    docker stop my_app || true
+                    docker rm my_app || true
+                    docker pull bharathiraja3234/my_app:latest
+                    docker run -d --name my_app -p 8081:80 bharathiraja3234/my_app:latest
                 '''
             }
         }
